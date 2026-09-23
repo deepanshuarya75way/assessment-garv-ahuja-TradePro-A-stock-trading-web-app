@@ -57,6 +57,29 @@ main()
         console.error("MongoDB connection error:", err);
     });
 
+let simulatedPrices = {
+    INFY:1555.45,
+    ONGC:116.8,
+    TCS:3194.8,
+    KPITTECH:266.45,
+    QUICKHEAL:308.55,
+    WIPRO:577.75,
+    "M&M":779.8,
+    RELIANCE:2212.4,
+    HUL:512.4
+};
+
+setInterval ( ()=>{
+    Object.keys(simulatedPrices).forEach( (stock)=>{
+
+        const change = (Math.random()-0.5)*0.01;
+
+        const oldPrice = simulatedPrices[stock];
+        const newPrice = oldPrice*(1+change);
+
+        simulatedPrices[stock]=Number(newPrice.toFixed(2));
+    });
+},2000);
 
 // app.get("/addHoldings", (req,res)=>{
 //     let tempHolding = [
@@ -280,6 +303,10 @@ main()
 //     });
 //     res.send("saved");
 // });
+
+app.get("/prices",(req,res)=>{
+    res.json(simulatedPrices);
+});
 
 app.post("/signup",async(req,res)=>{
     

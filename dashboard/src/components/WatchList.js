@@ -1,4 +1,4 @@
-import React,{useState,useContext } from "react";
+import React,{useState,useContext,useEffect } from "react";
 import GeneralContext from "./GeneralContext";
 
 // after material UI  npm install @mui/icons-material @mui/material @emotion/styled @emotion/react
@@ -9,45 +9,40 @@ import {watchlist} from '../data/data.js';
 
 import { DoughnutChart } from "./DoughnutChart.js";
 
-
+import axios from "axios";
 
 const WatchList = () => {
 
-  // export const data = {
-  // labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-  // datasets: [
-  //   {
-  //     label: '# of Votes',
-  //     data: [12, 19, 3, 5, 2, 3],
-  //     backgroundColor: [
-  //       'rgba(255, 99, 132, 0.2)',
-  //       'rgba(54, 162, 235, 0.2)',
-  //       'rgba(255, 206, 86, 0.2)',
-  //       'rgba(75, 192, 192, 0.2)',
-  //       'rgba(153, 102, 255, 0.2)',
-  //       'rgba(255, 159, 64, 0.2)',
-//       ],
-      // borderColor: [
-      //   'rgba(255, 99, 132, 1)',
-      //   'rgba(54, 162, 235, 1)',
-      //   'rgba(255, 206, 86, 1)',
-      //   'rgba(75, 192, 192, 1)',
-      //   'rgba(153, 102, 255, 1)',
-      //   'rgba(255, 159, 64, 1)',
-//       ],
-//       borderWidth: 1,
-//     },
-//   ],
-// };
+  const [livePrices,setLivePrices]=useState({});
 
-  const labels = watchlist.map((subArray)=>subArray['name']);
+  useEffect( ()=>{
+      const fetchPrices=async()=>{
+
+        try{
+                const response = await axios.get("https://localhost:3002/prices");
+                setLivePrices(response.data);
+        }
+        catch(error){
+          console.log("Error in fetching the prices : ",error);
+        }
+      };
+      fetchPrices();
+
+      const interval = setInterval(fetchPrices,2000);
+
+      return ()=>{
+        clearInterval(interval);
+      }
+  },[]);
+
+  const labels = watchlist.map((stock)=>stock.name);
 
   const data = {
     labels,
     datasets: [
       {
       label: 'Price',
-      data: watchlist.map((stock)=>stock.price),
+      data: watchlist.map((stock)=>livePrices[stock.name]??stock.price),
       backgroundColor: [
         'rgba(255, 99, 132, 0.5)',
         'rgba(54, 162, 235, 0.5)',
@@ -67,7 +62,7 @@ const WatchList = () => {
       borderWidth: 1,
   }
 ]
-  }
+  };
 
 
   return (
@@ -85,10 +80,10 @@ const WatchList = () => {
 
       <ul className="list">
 
-          {watchlist.map( (stock,index)=>{
-            return(
-              <WatchlistItem stock={stock} key={index} />
-            )})}
+          {watchlist.map( (stock,index)=>(
+              <WatchlistItem stock={stock} livePrice={livePrices[stock.name]??stock.price} key={index} />
+            )
+          )}
 
       </ul>
       
@@ -101,32 +96,40 @@ const WatchList = () => {
 export default WatchList;
 
 
-const WatchlistItem = ({stock})=>{
+const WatchlistItem = ({stock,livePrice})=>{
 
     const[showWatchlistActions,setShowWatchlistActions]=useState(false);
 
-    const handleMouseEnter = (e)=>{
+    const handleMouseEnter = ()=>{
         setShowWatchlistActions(true);
     }
 
-    const handleMouseExit = (e)=>{
+    const handleMouseExit = ()=>{
         setShowWatchlistActions(false);
     }
     
+    const isDown = livePrice < stock.price;
+
     return(
       <li onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseExit}>
           <div className="item">
               <p className={stock.isDown ? "down" : "up"}>{stock.name}</p>
               <div className="itemInfo">
                 <span className="percent">{stock.percent}</span>
-                {stock.isDown ? ( <KeyboardArrowDown className="down"/> ) : ( <KeyboardArrowUp className="up"/> )}
-                <span className="percent">{stock.price}</span>
+                {isDown ?(
+                    <KeyboardArrowDown className="down"
+                    />
+                ):(
+                  <KeyboardArrowUp className="up"/>
+                )}
+
+                <span className={isDown?"down":"up"}>{livePrice}</span>
               </div>
           </div>
-          {showWatchlistActions && <Actions uid={stock.name}/> }
+          {showWatchlistActions && (<Actions uid={stock.name}/>)}
       </li>
-    )
-}
+    );
+};
 
 const Actions = ({uid})=>{
 
@@ -153,5 +156,5 @@ const Actions = ({uid})=>{
 
         </span>
       </span>
-    )
-}
+    );
+};
