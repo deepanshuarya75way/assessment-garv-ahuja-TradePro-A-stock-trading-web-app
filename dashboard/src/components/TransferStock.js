@@ -139,15 +139,16 @@ const TransferStock = ()=>{
               {history.map((item)=>(
                 <tr key={item._id}>
                 <td> {item.stock}</td>
-                <td>{item.amount}</td>
+                <td>{Number(item.amount||0).toFixed(2)}</td>
 
-                <td>{item.quantity.toFixed(4)}</td>
+                <td>{Number(item.quantity || 0 ).toFixed(4)}</td>
 
-                <td>{item.price}</td>
-                <td>{new Date(item.date)}</td>
+                <td>{Number(item.price||0).toFixed(2)}</td>
+                <td>{new Date(item.date).toLocaleString()}</td>
 
                 </tr>
               ))}
+
             </tbody>
             </table>
         </div>
