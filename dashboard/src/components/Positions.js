@@ -8,7 +8,7 @@ const Positions = () => {
   let [allPositions,setAllPositions] =useState([]);
   
     useEffect( ()=>{
-          axios.get("https://zerodha-backend-c87q.onrender.com/allPositions", {withCredentials: true}).then( (res)=>{
+          axios.get("http://localhost:3002/allPositions", {withCredentials: true}).then( (res)=>{
             console.log("data came from api I made allPositions");
             setAllPositions(res.data);
           })

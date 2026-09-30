@@ -40,6 +40,7 @@ const TransferHistory = mongoose.model("TransferHistory",new mongoose.Schema({
 const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:3003"
 ]
 app.use(cors({
     origin: function (origin, callback) {
@@ -436,6 +437,13 @@ app.get("/transferStock",async(req,res)=>{
         }
 
         const price = sender.price;
+
+        if(!price || price<=0){
+            res.status(400).json({
+                message:"Stock price is invalid"
+            });
+        }
+        
         const quantity = Number(amount)/price;
 
         if(sender.qty*price<Number(amount)){
@@ -470,7 +478,7 @@ app.get("/transferStock",async(req,res)=>{
             await receiver.save();
         }
 
-        await TranferHistory.create({
+        await TransferHistory.create({
             sender:senderId,
             receiver:receiverId,
             stock,
@@ -480,7 +488,7 @@ app.get("/transferStock",async(req,res)=>{
         });
 
         res.json({
-            message:"Stock has been tranferred successfully",
+            message:"Stock has been transferred successfully",
             quantity:quantity.toFixed(4),
             price
         });
@@ -488,7 +496,7 @@ app.get("/transferStock",async(req,res)=>{
     catch(err){
         console.log(err);
         res.status(500).json({
-            message:"Transfer failed"
+            message:err.message
         });
     }
 });
@@ -559,6 +567,6 @@ app.get("/", (req, res) => {
     res.send("Backend is running");
 });
 
-app.listen(3002, () => {
+app.listen(PORT, () => {
     console.log(`App is listening on port ${PORT}`);
 });

@@ -10,7 +10,7 @@ const Holdings = () => {
   let [allHoldings,setAllHoldings] =useState([]);
 
   useEffect( ()=>{
-        axios.get("https://zerodha-backend-c87q.onrender.com/allHoldings", {withCredentials: true}).then( (res)=>{
+        axios.get("http://localhost:3002/allHoldings", {withCredentials: true}).then( (res)=>{
           console.log("data came from api I made");
           setAllHoldings(res.data);
         })

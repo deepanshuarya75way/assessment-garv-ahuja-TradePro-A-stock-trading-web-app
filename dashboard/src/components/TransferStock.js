@@ -116,7 +116,7 @@ const TransferStock = ()=>{
             Shares to transfer:{quantity.toFixed(4)}</p> 
           )}
 
-          <button onClick={transfer}>Trasfer Stock</button>
+          <button onClick={transfer}>Transfer Stock</button>
 
           </div>
 
