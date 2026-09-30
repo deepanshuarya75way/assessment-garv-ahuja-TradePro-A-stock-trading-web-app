@@ -24,13 +24,23 @@ const HoldingsModel = require('./schemas/HoldingSchema');
 const PositionsModel = require('./schemas/PositionsSchema');
 const OrdersModel = require('./schemas/OrdersSchema');
 
+const TransferHistory = mongoose.model("TransferHistory",new mongoose.Schema({
+    sender:mongoose.Schema.Types.ObjectId,
+    receiver:mongoose.Schema.Types.ObjectId,
+    stock:String,
+    amount:Number,
+    quantity:Number,
+    price:Number,
+    Date:{
+        type:Date,
+        default:Date.now
+    }
+}));
+
 const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:3001",
-    process.env.FRONTEND_URL,
-    process.env.DASHBOARD_URL
-].filter(Boolean);
-
+]
 app.use(cors({
     origin: function (origin, callback) {
 
@@ -370,11 +380,147 @@ app.post("/login",async(req,res)=>{
 });
 
 
+app.get("/users",async(req,res)=>{
+
+    try{
+        const users = await UsersModel.find({},"name email");
+        res.json(users);
+    }
+    catch(err){
+        res.status(500).json({message:"Could not get users"});
+    }
+})
 
 app.get('/allHoldings', async (req, res) => {
-    const allHoldings = await HoldingsModel.find({});
-    res.json(allHoldings);
+
+    try {
+
+        const token = req.cookies.token;
+        const decoded = jwt.verify(token,process.env.JWT_SECRET);
+
+        const holdings = await HoldingsModel.find({
+            userId: decoded.userId
+        });
+        res.json(holdings);
+    }
+    catch(err){
+        res.status(401).json({message:"Unauthorized"});
+    }
 });
+
+app.get("/transferStock",async(req,res)=>{
+
+    try{
+        const token = req.cookies.token;
+        const decoded = jwt.verify(token,process.env.JWT_SECRET);
+
+        const {receiverId,stock,amount} = req.body;
+
+        if(!receiverId || !stock || !amount || amount<=0){
+            return res.status(400).json({
+                message:"Please provide stock , receiver and amount"
+            })
+        }
+
+        const senderId = decoded.userId;
+
+        const sender = await HoldingsModel.findOne({
+            userId:senderId,
+            name:stock
+        });
+
+        if(!sender){
+            res.status(400).json({
+                message:"You are not the stock owner"
+            });
+        }
+
+        const price = sender.price;
+        const quantity = Number(amount)/price;
+
+        if(sender.qty*price<Number(amount)){
+            res.status(400).json({
+                message:"Insufficient stock value"
+            });
+        }
+
+        sender.qty -=quantity;
+        await sender.save();
+
+
+        let receiver = await HoldingsModel.findOne({
+            userId:receiverId,
+            name:stock
+        })
+
+        if(receiver){
+            receiver.qty += quantity;
+            receiver.price = price;
+            await receiver.save();
+        }else{
+            receiver = new HoldingsModel({
+                userId:receiverId,
+                name:stock,
+                qty:quantity,
+                avg:price,
+                price:price,
+                net:"0%",
+                day:"0%"
+            });
+            await receiver.save();
+        }
+
+        await TranferHistory.create({
+            sender:senderId,
+            receiver:receiverId,
+            stock,
+            amount:Number(amount),
+            quantity,
+            price
+        });
+
+        res.json({
+            message:"Stock has been tranferred successfully",
+            quantity:quantity.toFixed(4),
+            price
+        });
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).json({
+            message:"Transfer failed"
+        });
+    }
+});
+
+
+app.get("/transferHistory",async (req,res)=>{
+
+    try{
+
+        const token = req.cookies.token;
+        const decoded = jwt.verify(token,process.env.JWT_SECRET);
+
+        const history = await TransferHistory.find({
+            $or:[
+                {sender:decoded.userId},
+                {receiver:decoded.userId}
+            ]
+        }).sort({data:-1});
+
+        res.json(history);
+
+    }catch(err){
+        res.status(401).json({
+            message:"Unautorized"
+        });
+    }
+});
+
+
+
+
+
 
 app.get('/allPositions', async (req, res) => {
     const allPositions = await PositionsModel.find({});

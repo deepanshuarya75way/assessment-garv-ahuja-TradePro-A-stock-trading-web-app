@@ -101,6 +101,16 @@ const Menu = () => {
             
 
           </li>
+
+          <li>
+
+            <Link to="/transfer" style={{textDecoration:"none"}} onClick={ ()=>{handleMenuClick(7)}}>
+            <p className={selectedMenu===7? activeMenuClass : menuClass}>Transfer Stock</p>
+            </Link>
+            
+
+          </li>
+
         </ul>
         <hr />
 
